@@ -1,0 +1,58 @@
+apiVersion: compliance.federated.io/v1alpha1
+kind: SovereignPolicy
+metadata:
+  name: finance-eu-policy
+  namespace: default
+spec:
+  targetNamespace: finance
+  allowedRegions:
+    - eu-central-1
+    - eu-west-1
+  enforcementAction: deny
+  description: "EU data residency requirement for finance department"
+  expiryDate: "2026-12-31T23:59:59Z"
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: finance
+  labels:
+    environment: production
+    team: finance
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: finance-api
+  namespace: finance
+spec:
+  containers:
+  - name: api
+    image: finance-api:v1
+    ports:
+    - containerPort: 8080
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: topology.kubernetes.io/region
+            operator: In
+            values:
+            - eu-central-1
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: finance-data
+  namespace: finance
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: eu-storage

@@ -1,0 +1,102 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: sovereignpolicies.compliance.federated.io
+  namespace: federated-sovereignty-system
+spec:
+  group: compliance.federated.io
+  names:
+    kind: SovereignPolicy
+    plural: sovereignpolicies
+    singular: sovereignpolicy
+    shortNames:
+      - sovpol
+      - sovpols
+  scope: Cluster
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          description: "SovereignPolicy defines geopolitical data residency constraints for Kubernetes namespaces"
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              required:
+                - targetNamespace
+                - allowedRegions
+              properties:
+                targetNamespace:
+                  type: string
+                  description: "The namespace to apply sovereignty constraints to"
+                  minLength: 1
+                  pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+                allowedRegions:
+                  type: array
+                  description: "List of allowed geopolitical regions (e.g., 'eu-central', 'us-east-1', 'ap-southeast-1')"
+                  items:
+                    type: string
+                    minLength: 1
+                  minItems: 1
+                enforcementAction:
+                  type: string
+                  description: "Enforcement action: 'deny' blocks violations, 'dryrun' logs only"
+                  enum:
+                    - deny
+                    - dryrun
+                  default: deny
+                description:
+                  type: string
+                  description: "Human-readable description of the policy"
+                  maxLength: 256
+                excludedNamespaces:
+                  type: array
+                  description: "Namespaces to exclude from constraint checks (e.g., system namespaces)"
+                  items:
+                    type: string
+                expiryDate:
+                  type: string
+                  format: date-time
+                  description: "Optional expiry date for the policy"
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum:
+                    - Pending
+                    - Active
+                    - Failed
+                    - Expired
+                  default: Pending
+                lastUpdated:
+                  type: string
+                  format: date-time
+                message:
+                  type: string
+                constraintCreated:
+                  type: boolean
+                  default: false
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Namespace
+          type: string
+          jsonPath: .spec.targetNamespace
+        - name: Regions
+          type: string
+          jsonPath: .spec.allowedRegions
+        - name: Status
+          type: string
+          jsonPath: .status.phase
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp

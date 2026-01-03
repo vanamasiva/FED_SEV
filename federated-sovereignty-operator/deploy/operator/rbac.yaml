@@ -1,0 +1,62 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: federated-sovereignty-operator
+  namespace: federated-sovereignty-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: federated-sovereignty-operator
+rules:
+  # SovereignPolicy CRD permissions
+  - apiGroups: ["compliance.federated.io"]
+    resources: ["sovereignpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["compliance.federated.io"]
+    resources: ["sovereignpolicies/status"]
+    verbs: ["get", "update", "patch"]
+  
+  # Namespace permissions
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "patch"]
+  
+  # Gatekeeper Constraint permissions
+  - apiGroups: ["constraints.gatekeeper.sh"]
+    resources: ["k8sgeoresidencies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  
+  # Pod permissions (for monitoring)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  
+  # Event permissions (for logging)
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  
+  # Kopf framework requirements
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: federated-sovereignty-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: federated-sovereignty-operator
+subjects:
+  - kind: ServiceAccount
+    name: federated-sovereignty-operator
+    namespace: federated-sovereignty-system

@@ -1,0 +1,69 @@
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: Config
+metadata:
+  name: config
+  namespace: gatekeeper-system
+spec:
+  # Sync configuration for Gatekeeper to watch namespace labels
+  sync:
+    syncOnly:
+      - group: ""
+        version: "v1"
+        kind: "Namespace"
+  
+  # Audit configuration
+  audit:
+    logOnly: false
+    maxAuditEventsLogged: 100
+  
+  # Constraint configuration
+  constraints:
+    # Allow violations in dryrun mode to be logged without rejection
+    exemptions:
+      - apiGroups:
+          - ""
+        kinds:
+          - Pod
+        namespaces:
+          - kube-system
+          - kube-public
+          - gatekeeper-system
+          - federated-sovereignty-system
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatekeeper-sync-config
+  namespace: gatekeeper-system
+data:
+  # Configuration for syncing namespace labels to Gatekeeper
+  sync-interval: "30"
+  watch-resources: "namespaces,pods"
+  
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gatekeeper-admin-upgrade
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gatekeeper-admin-upgrade
+subjects:
+  - kind: ServiceAccount
+    name: gatekeeper-admin
+    namespace: gatekeeper-system
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gatekeeper-audit
+  namespace: gatekeeper-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      gatekeeper.sh/system: "yes"
+      app: audit
