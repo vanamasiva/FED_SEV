@@ -452,7 +452,7 @@ For issues and questions:
 - Review logs and error messages
 - Test in dry-run mode first
 
-## 🏆 EB1A Relevance
+## 🏆 Technical Relevance
 
 This project demonstrates:
 - **Architectural Innovation**: Policy-as-Code framework for multi-region compliance
